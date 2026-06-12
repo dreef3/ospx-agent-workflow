@@ -1,11 +1,11 @@
 name: ospx-best-practices
 version: 1
 description: >
-  Engineering-excellence workflow — spec-driven development enriched with
-  TDD, five-axis code review, security hardening, and incremental
-  verification gates.  Forked from the OpenSpec `spec-driven` default and
-  synthesised with best practices from addyosmani/agent-skills and
-  obra/superpowers.
+  Engineering-excellence workflow — spec-driven development with TDD gates,
+  five-axis code review, STRIDE security modelling, incremental verification,
+  and explicit assumption surfacing baked in at every phase.
+  Forked from OpenSpec spec-driven; best practices synthesised from
+  addyosmani/agent-skills and obra/superpowers.
 
 artifacts:
 
@@ -13,59 +13,75 @@ artifacts:
   - id: proposal
     generates: proposal.md
     description: >
-      Establishes WHY the change is needed and names every capability that
-      will be created or modified.
+      Establishes WHY the change is needed.  All assumptions are surfaced
+      here so they can be invalidated before a line of code is written.
     template: proposal.md
     instruction: |
-      Create the proposal document.
+      Create proposal.md.  Keep it to 1-2 pages — this is the "why", not the "how".
 
-      Sections (keep concise — 1-2 pages):
+      MANDATORY: Before writing any section, list every assumption you are
+      making about requirements, scope, and architecture:
+
+        ASSUMPTIONS I'M MAKING:
+        1. [assumption] → if wrong, this affects [impact]
+        2. …
+        → Correct me now or I'll proceed with these.
+
+      Sections:
       - **Why**: 1-2 sentences.  What problem does this solve?  Why now?
       - **What Changes**: Bullet list.  Mark breaking changes **BREAKING**.
       - **Capabilities**:
-          - New Capabilities: kebab-case names, each becomes specs/<name>/spec.md
+          - New Capabilities: kebab-case names → each becomes specs/<name>/spec.md
           - Modified Capabilities: existing specs whose requirements are changing
+            (implementation-only changes leave this empty)
+      - **Assumptions**: Paste the assumption list from above as a permanent record.
       - **Impact**: Affected code, APIs, dependencies, systems.
-      - **Assumptions**: List ALL assumptions explicitly before proceeding.
-        Format: "ASSUMPTION: <statement> → if wrong this affects <impact>"
+      - **Out of Scope**: Explicitly list what this change does NOT address.
 
-      Surface every assumption — silent assumptions are the most common
-      failure mode.  The reviewer must be able to validate or override each
-      one before work begins.
+      The Capabilities section is the contract between proposal and specs.
+      Research existing specs before filling it in.
     requires: []
 
   # ── 2. SPECS ───────────────────────────────────────────────────────────────
   - id: specs
     generates: "specs/**/*.md"
     description: >
-      Defines WHAT the system must do.  Every requirement has at least one
-      testable scenario — scenarios become the TDD test skeleton.
+      Defines WHAT the system must do.  Written in a form that maps directly
+      to test cases — every scenario is a future failing test.
     template: spec.md
     instruction: |
-      Create one spec file per capability listed in the proposal.
+      Create one spec file per capability from the proposal.
+
+      Testability contract:
+      - Every requirement maps to ≥1 GIVEN/WHEN/THEN scenario.
+      - Every scenario becomes a test entry in test-plan.md.
+      - If a requirement cannot be expressed as a scenario, it is too vague
+        and must be sharpened before continuing.
 
       Requirement format:
         ### Requirement: <name>
-        The system SHALL …
+        The system SHALL … (use SHALL/MUST for normative; never "should"/"may")
 
         #### Scenario: <name>
         - **GIVEN** <precondition>
         - **WHEN** <action>
-        - **THEN** <expected outcome>
+        - **THEN** <expected outcome, observable from outside the system>
 
-      Rules:
-      - Use SHALL/MUST for normative statements (avoid should/may).
-      - Every requirement needs ≥1 scenario; every scenario is a future test.
-      - #### (4 hashtags) for scenarios — 3 hashtags silently breaks parsing.
-      - For modified capabilities: copy the FULL existing requirement block
-        then edit.  Partial content in MODIFIED sections loses detail at
-        archive time.
+      Critical rules:
+      - 4 hashtags for scenarios — 3 hashtags breaks parsing silently.
+      - THEN clauses must be externally observable (not internal state).
+      - Include negative scenarios: invalid input, boundary conditions,
+        error paths.  These are equally important as happy-path scenarios.
 
       Delta headers for modified capabilities:
         ## ADDED Requirements
-        ## MODIFIED Requirements
-        ## REMOVED Requirements  (include Reason + Migration)
-        ## RENAMED Requirements  (FROM:/TO: format)
+        ## MODIFIED Requirements  (copy ENTIRE existing block, then edit)
+        ## REMOVED Requirements   (include Reason + Migration path)
+        ## RENAMED Requirements   (FROM:/TO: format)
+
+      Common mistake: partial content in MODIFIED sections.  Always copy the
+      full requirement block before editing — partial edits lose detail at
+      archive time.
     requires:
       - proposal
 
@@ -73,36 +89,51 @@ artifacts:
   - id: test-plan
     generates: test-plan.md
     description: >
-      Defines failing tests BEFORE any implementation code is written.
-      This is the TDD contract: implementation only begins once the test
-      skeleton is green-lit.
+      TDD contract.  All tests are specified (and ideally written) here
+      before implementation begins.  Every entry starts PENDING (RED).
     template: test-plan.md
     instruction: |
-      Create the test plan document.  Tests are written here (or at least
-      fully specified) before any production code exists.
+      Create test-plan.md.
+
+      This document is the TDD gate: implementation starts only after every
+      scenario has a test entry here and those tests are confirmed failing.
+
+      NO PRODUCTION CODE is written until this document is reviewed.
 
       Mandatory sections:
-      - **Test Pyramid Allocation**: State target % for unit / integration / e2e.
-        Baseline: ~80% unit, ~15% integration, ~5% e2e.
-      - **Tests Derived from Specs**: For every scenario in specs/*.md list:
-          - Test ID (e.g., UT-001, IT-001, E2E-001)
-          - Type (unit | integration | e2e)
-          - Description (copy the scenario WHEN/THEN as the description)
-          - Arrange / Act / Assert skeleton
-          - Status: PENDING (all start pending — RED phase)
-      - **Edge Cases & Negative Tests**: Explicitly list boundary conditions,
-        invalid inputs, and error paths.  Each needs a test entry.
-      - **Test Isolation Strategy**: How state is reset between tests;
-        which doubles (stubs/mocks/fakes) are acceptable and why.
-      - **Performance Baselines**: Any latency or throughput thresholds that
-        must not regress (add as assertions, not comments).
 
-      TDD contract:
-        RED   → Tests listed here must fail before implementation starts.
-        GREEN → Implement the minimum code to make each test pass.
-        REFACTOR → Improve code; all tests remain green.
+      **Test Pyramid Allocation**
+      State the target split for this change.  Baseline: ~80% unit,
+      ~15% integration, ~5% e2e.  Justify deviations.
 
-      NO PRODUCTION CODE is written until this document is accepted.
+      **Tests Derived from Specs**
+      Map every scenario in specs/*.md to a row:
+      | ID      | Type        | Spec Scenario | Arrange / Act / Assert Sketch | Status  |
+      | UT-001  | unit        | …             | …                             | PENDING |
+      IDs: UT-NNN (unit), IT-NNN (integration), E2E-NNN (end-to-end).
+      Status starts PENDING for all; updated to PASS/FAIL as tests run.
+
+      **Edge Cases & Negative Tests**
+      Boundary conditions, invalid inputs, error paths — each needs a row.
+      These are not optional.  Missing negative tests are a review blocker.
+
+      **Test Isolation Strategy**
+      - How is state reset between tests?
+      - Which test doubles are acceptable and why?
+        (Prefer real code over mocks; each mock reduces confidence.)
+      - DAMP over DRY: each test tells a complete story independently.
+
+      **Performance Baselines**
+      List any latency/throughput thresholds that must not regress.
+      These become hard assertions (not comments) in the test suite.
+
+      **Anti-Patterns to Avoid** (always include this section)
+      - Testing implementation details rather than observable behaviour
+      - Mocking everything (high mock count = low confidence)
+      - Snapshot tests as a substitute for behaviour assertions
+      - Flaky tests left unresolved
+      - Tests written after the implementation (tests-after only confirm
+        what code does; tests-before define what code should do)
     requires:
       - specs
 
@@ -110,33 +141,73 @@ artifacts:
   - id: design
     generates: design.md
     description: >
-      Explains HOW to implement the change, including security threat model,
-      data model decisions, and architectural trade-offs.
+      Explains HOW to implement the change.  Security threat model is
+      always required regardless of change size.
     template: design.md
     instruction: |
-      Create the design document.  Only required when ≥1 of these applies:
-      - Cross-cutting change (multiple services/modules) or new arch pattern
-      - New external dependency or significant data model changes
-      - Security, performance, or migration complexity
-      - Ambiguity that benefits from upfront technical decisions
+      Create design.md.
+
+      Skip ONLY if ALL of the following are true:
+      - Single module, no cross-cutting concerns
+      - No new external dependencies
+      - No data model changes
+      - No security surface changes
+      - No migration required
+
+      If in doubt, write it.
 
       Sections:
-      - **Context**: Background, current state, constraints.
-      - **Goals / Non-Goals**: What this design achieves and explicitly excludes.
-      - **Decisions**: Key technical choices with rationale (why X over Y?).
-        Include alternatives considered for each.
-      - **Security Threat Model** (always required):
-          - Trust boundaries — where does untrusted data enter?
-          - Valuable assets (credentials, PII, payment data).
-          - STRIDE analysis per boundary.
-          - Controls in place or planned for each threat.
-          - Approval-required items (new auth flows, sensitive data storage,
-            external integrations, CORS changes, file upload changes).
-      - **Risks / Trade-offs**: [Risk] → Mitigation format.
-      - **Migration Plan**: Steps to deploy, rollback strategy.
-      - **Open Questions**: Outstanding decisions to resolve before coding.
 
-      Reference proposal for motivation, specs for requirements.
+      **Context**: Background, current state, constraints, stakeholders.
+
+      **Goals / Non-Goals**
+      Explicit Non-Goals prevent scope creep during implementation.
+
+      **Decisions**
+      For each key technical choice:
+        ### Decision: <name>
+        Chosen: [approach]
+        Rationale: [why — reference concrete constraints, not preferences]
+        Alternatives considered:
+        - [alternative] — rejected because [specific reason]
+
+      **Security Threat Model** (ALWAYS REQUIRED)
+      Step 1 — Map trust boundaries:
+        | Boundary         | Untrusted Input          | Control in Place        |
+        | HTTP API         | user JSON body           | schema validation + sanitise |
+
+      Step 2 — Identify valuable assets: credentials, PII, payment data,
+        session tokens, internal service tokens.
+
+      Step 3 — STRIDE analysis per boundary:
+        | Threat                  | Surface    | Severity | Mitigation              |
+        | Spoofing                | …          | H/M/L    | …                       |
+        | Tampering               | …          | H/M/L    | …                       |
+        | Repudiation             | …          | H/M/L    | …                       |
+        | Information Disclosure  | …          | H/M/L    | …                       |
+        | Denial of Service       | …          | H/M/L    | …                       |
+        | Elevation of Privilege  | …          | H/M/L    | …                       |
+
+      Step 4 — Approval-required items (new auth flows, sensitive data storage,
+        external integrations, CORS changes, file uploads):
+        - [ ] [item] — owner: [name]
+
+      Step 5 — LLM-specific controls (if AI is in the stack):
+        - AI-generated output is treated as untrusted user input
+        - Secrets and cross-tenant data are excluded from prompts
+        - Tool/function permissions are scoped to minimum necessary
+        - Model output is validated before execution
+
+      **Risks / Trade-offs**
+      | Risk                     | Impact  | Mitigation                         |
+      | [description]            | H/M/L   | [specific mitigation]              |
+
+      **Migration Plan**
+      Step-by-step deploy sequence.
+      Rollback strategy: [how to revert].
+
+      **Open Questions**
+      - [ ] [question] — owner: [name] — must resolve before coding starts
     requires:
       - proposal
 
@@ -144,62 +215,73 @@ artifacts:
   - id: review-checklist
     generates: review-checklist.md
     description: >
-      Pre-merge review criteria derived from the five-axis framework.
-      Reviewers mark each item; no merge until all Critical items are clear.
+      Change-specific pre-merge checklist.  Derived from specs, test-plan,
+      and design for this change.  No merge until all CRITICAL items clear.
     template: review-checklist.md
     instruction: |
-      Generate a project-specific review checklist derived from the specs,
-      test-plan, and design for this change.
+      Generate review-checklist.md tailored to this change.
 
-      Structure the checklist using the five-axis framework:
+      Use the five-axis framework as the structure.  After the standard
+      items for each axis, add items derived from this change's specs,
+      test-plan, and design threat model.
 
-      ## 1. Correctness
-      - [ ] Change accomplishes its stated purpose (per proposal + specs)
-      - [ ] All spec scenarios are covered by tests
-      - [ ] Edge cases and negative paths have tests
-      - [ ] No off-by-one errors or unhandled error paths
-      - [ ] Race conditions considered for any async/concurrent code
-      - [Add change-specific items here]
+      **Axis 1 — Correctness**
+      Standard items (always include):
+      - [ ] Change accomplishes every requirement in specs/*.md
+      - [ ] Every spec scenario has a corresponding test
+      - [ ] Negative / edge-case tests exist
+      - [ ] No error paths swallowed silently
+      - [ ] Race conditions considered for any async code
+      Change-specific items from specs: [add here]
 
-      ## 2. Readability & Simplicity
-      - [ ] Code is understandable without author explanation
-      - [ ] No premature abstractions (3 similar lines > one over-engineered helper)
-      - [ ] Names are descriptive and consistent with codebase conventions
-      - [ ] Change size is reviewable (≤300 lines; >300 lines requires split)
-      - [Add change-specific items here]
+      **Axis 2 — Readability & Simplicity**
+      Standard items:
+      - [ ] Understandable without author explanation
+      - [ ] No premature abstractions (3 similar lines > 1 over-engineered helper)
+      - [ ] Change size ≤300 lines; >300 must be split before review
+      - [ ] Refactoring is in a separate commit from feature work
+      Change-specific items: [add here]
 
-      ## 3. Architecture
-      - [ ] Change fits the existing system design
+      **Axis 3 — Architecture**
+      Standard items:
+      - [ ] Fits existing system design and patterns
       - [ ] Module boundaries and dependency direction respected
-      - [ ] Refactoring is separate from feature work
-      - [Add change-specific items here]
+      - [ ] No circular dependencies introduced
+      Change-specific items: [add here]
 
-      ## 4. Security (derived from design threat model)
+      **Axis 4 — Security**
+      Standard items (always include):
       - [ ] All external input validated and sanitised at system boundaries
       - [ ] No secrets in code, logs, or version control
-      - [ ] Parameterised queries / ORM used; no string-interpolated SQL
+      - [ ] Parameterised queries / ORM only — no string-interpolated SQL
       - [ ] Output encoded to prevent XSS
-      - [ ] Authentication and authorisation checks present and correct
-      - [ ] New auth flows / sensitive data storage has explicit approval
-      - [Add threat-model-specific items here]
+      - [ ] Auth checks present and correct
+      - [ ] Approval-required items from design.md signed off
+      Add one item per threat from the STRIDE table in design.md.
 
-      ## 5. Performance
+      **Axis 5 — Performance**
+      Standard items:
       - [ ] No N+1 queries introduced
-      - [ ] No unbounded loops over large datasets
-      - [ ] Async where appropriate; no blocking the event loop
-      - [ ] Performance baselines from test-plan not regressed
-      - [Add change-specific items here]
+      - [ ] No unbounded loops over large data without pagination
+      - [ ] Performance baselines from test-plan.md not regressed
+      Change-specific items: [add here]
 
-      ## Severity Legend
-      Reviewers prefix findings with:
+      **Severity Legend** (reviewers prefix findings with these):
         CRITICAL  — must fix before merge
-        IMPORTANT — must fix before proceeding to next task
+        IMPORTANT — must fix before next task
         NIT       — style/minor; fix if easy
-        OPTIONAL  — good idea, but not blocking
-        FYI       — informational, no action required
+        OPTIONAL  — good idea, not blocking
+        FYI       — informational
 
-      Approval standard: approve when the change definitely improves overall
-      code health, even if not perfect.  Never LGTM without evidence.
+      **Findings table** (blank, reviewers fill this in):
+      | Severity | Location | Finding | Resolution |
+      | CRITICAL |          |         |            |
+
+      **Sign-Off table**:
+      | Reviewer | Date | Status |
+
+      Approval standard: approve when the change improves overall code health,
+      even if imperfect.  Never "LGTM" without evidence.
     requires:
       - specs
       - design
@@ -209,43 +291,49 @@ artifacts:
   - id: tasks
     generates: tasks.md
     description: >
-      Implementation checklist.  Every task group ends with a verification
-      gate before the next group starts.
+      Ordered implementation checklist with pre/post verification gates.
+      The apply phase tracks `- [ ] N.M …` checkboxes.
     template: tasks.md
     instruction: |
-      Create the implementation task list.
+      Create tasks.md.
 
-      IMPORTANT: use `- [ ] N.M description` format — the apply phase
-      tracks this.  Group tasks under ## numbered headings.
+      Format: `- [ ] N.M Task description` — apply tracks this exactly.
+      Group under ## numbered headings.
 
-      Required groups (add project-specific groups between 2 and N-1):
+      Required sections (add project-specific sections between 1 and N-1):
 
       ## 0. Pre-Implementation Gate
-      - [ ] 0.1 All spec scenarios have entries in test-plan.md
-      - [ ] 0.2 Test skeleton committed (all tests in RED / failing state)
-      - [ ] 0.3 Design threat model reviewed and controls agreed
+      These must be complete before writing any production code.
+      - [ ] 0.1 All spec scenarios have entries in test-plan.md (status PENDING)
+      - [ ] 0.2 Test skeleton committed — all tests confirmed FAILING (RED)
+      - [ ] 0.3 design.md threat model reviewed; approval items signed off
       - [ ] 0.4 review-checklist.md populated with change-specific items
+      - [ ] 0.5 All open questions in design.md resolved
+      - [ ] 0.6 Assumptions in proposal.md confirmed or corrected
 
       ## 1. Foundation
-      (data models, schema migrations, API contracts — no business logic yet)
+      Data models, schema migrations, API contracts.
+      No business logic yet — build the skeleton.
+
+      ## 2. Core Implementation
+      Business logic, one spec scenario per task (TDD: RED→GREEN per task).
 
       ## N. Verification Gate
-      - [ ] N.1 All unit tests pass
-      - [ ] N.2 All integration tests pass
-      - [ ] N.3 Build succeeds with no type errors or lint violations
-      - [ ] N.4 review-checklist.md fully checked — no CRITICAL items open
-      - [ ] N.5 Performance baselines not regressed
-      - [ ] N.6 No secrets committed (run secret scan)
+      No merge until every item here passes.
+      - [ ] N.1 Full test suite passes (unit + integration + e2e) — run fresh
+      - [ ] N.2 Build succeeds, no type errors, no lint violations
+      - [ ] N.3 review-checklist.md — zero CRITICAL items open
+      - [ ] N.4 Performance baselines from test-plan.md not regressed
+      - [ ] N.5 Secret scan passes — no credentials in diff
+      - [ ] N.6 Documentation updated for any public API or behaviour change
 
-      Task sizing:
-        XS  single function / tiny change
-        S   one class / component
-        M   one feature end-to-end (largest acceptable)
-        L+  must be split before work begins
+      Task sizing rules:
+        XS — single function / tiny change
+        S  — one class / component
+        M  — one feature end-to-end   ← largest acceptable unit
+        L+ — must split before work begins
 
-      Each task must have testable acceptance criteria embedded as a
-      sub-comment or inline description.  "Done" means tests pass, build
-      succeeds, and the review checklist item for this task is checked.
+      Each task must be verifiable: you know unambiguously when it is done.
     requires:
       - specs
       - design
@@ -256,48 +344,167 @@ apply:
   requires: [tasks]
   tracks: tasks.md
   instruction: |
-    Implementation protocol — follow in order, no exceptions:
+    Read all context (proposal.md, specs/*.md, test-plan.md, design.md,
+    review-checklist.md) before touching any code.
 
-    BEFORE EACH TASK:
-    1. Read the relevant spec scenario(s) and test-plan entries.
-    2. Confirm the failing test exists and is actually failing (RED).
-    3. State your assumptions explicitly before writing any code.
+    ═══════════════════════════════════════════════════════════════
+    SECTION A — BEFORE EACH TASK
+    ═══════════════════════════════════════════════════════════════
 
-    DURING EACH TASK (RED → GREEN → REFACTOR):
-    RED    — run the test; confirm it fails for the right reason.
-    GREEN  — write the minimum code to make the test pass.  Nothing more.
-    REFACTOR — clean up; run tests again; all must remain green.
+    1. Surface assumptions.
+       State every assumption before writing code:
+         ASSUMPTIONS: 1. [assumption] → if wrong, affects [impact]
+       Do not proceed if any assumption is unresolved.
 
-    AFTER EACH TASK:
-    4. Run the full test suite.  Do not proceed past a failing test.
-    5. Run the build.  Do not proceed past a broken build.
-    6. Mark the task complete in tasks.md.
+    2. Verify the failing test exists.
+       Find the test-plan.md entries for this task.
+       Confirm the test is in a PENDING / FAILING state.
+       If no test exists yet, write it now (RED phase) before proceeding.
 
-    STOP-THE-LINE RULE:
-    When anything unexpected happens — tests fail, build breaks, behaviour
-    diverges from specs — STOP adding features.  Preserve evidence.
-    Diagnose root cause before touching anything else.  Fix → guard →
-    resume.  Guessing wastes more time than diagnosing.
+    3. Confirm the test fails for the right reason.
+       Run the test.  "Right reason" = feature not implemented, not a
+       test-infrastructure error.  If it passes immediately: the test is
+       wrong.  Delete it and rewrite.
 
-    ROOT CAUSE RULE:
-    Never fix a symptom.  Ask "why does this happen?" until you reach
-    the actual cause.  If three or more fix attempts fail, stop patching
-    and redesign.
+    ═══════════════════════════════════════════════════════════════
+    SECTION B — THE TDD CYCLE (RED → GREEN → REFACTOR)
+    ═══════════════════════════════════════════════════════════════
 
-    SCOPE DISCIPLINE:
-    Touch only what the current task requires.  Do NOT:
-    - Clean up adjacent code
+    RED
+    - Test expresses the spec scenario's WHEN/THEN behaviour.
+    - Uses Arrange / Act / Assert structure.
+    - Tests observable behaviour, not internal state.
+    - DAMP: each test tells a complete story on its own.
+    - Run it.  It must fail.
+
+    GREEN
+    - Write the minimum production code to make the test pass.
+    - Nothing more.  No speculative generality.  No pre-emptive abstraction.
+    - Run the test.  It must pass.
+    - Run the full suite.  No regressions.
+
+    REFACTOR
+    - Improve clarity, remove duplication, sharpen names.
+    - Zero behaviour changes — all tests remain green.
+    - Ask: "Would a staff engineer say 'why didn't you just…'?"
+      If yes, simplify.  Three similar lines > one over-engineered helper.
+    - Run the full suite again.
+
+    ═══════════════════════════════════════════════════════════════
+    SECTION C — STOP-THE-LINE RULE
+    ═══════════════════════════════════════════════════════════════
+
+    When ANY of these happen — tests fail, build breaks, behaviour
+    diverges from specs, something unexpected occurs — STOP immediately.
+
+    Protocol:
+    1. STOP adding features or making unrelated changes.
+    2. PRESERVE evidence (error output, logs, reproduction steps).
+    3. DIAGNOSE using the triage sequence below.
+    4. FIX the root cause (not the symptom).
+    5. GUARD with a regression test.
+    6. RESUME only after verification passes.
+
+    Do not push past a failing test.  Errors compound.
+
+    ═══════════════════════════════════════════════════════════════
+    SECTION D — ROOT CAUSE TRIAGE
+    ═══════════════════════════════════════════════════════════════
+
+    Step 1 — Reproduce reliably.
+      Cannot fix what you cannot reproduce.  If intermittent, bisect:
+        git bisect start
+        git bisect bad / git bisect good <sha>
+        git bisect run <test command>
+
+    Step 2 — Localise (which layer?).
+      UI → console / DOM / network tab
+      API → server logs / request-response
+      DB  → query output / schema / data integrity
+      Build → config / dependencies / environment
+      Test itself → is the test wrong (false negative)?
+
+    Step 3 — Reduce.
+      Strip to the minimal failing case.  Smallest input that triggers
+      the failure.  Minimal reproduction makes root cause obvious.
+
+    Step 4 — Fix the root cause, not the symptom.
+      Bad: "list shows duplicates" → deduplicate in UI
+      Good: "list shows duplicates" → fix the JOIN that produces duplicates
+      Ask "why?" until you reach the actual cause.
+
+    Step 5 — Guard.
+      Write a test that fails without the fix and passes with it.
+      Update test-plan.md: add the entry, mark it PASS.
+
+    Three failed attempts = stop patching.  The problem is architectural.
+    Redesign rather than accumulate patches.
+
+    ═══════════════════════════════════════════════════════════════
+    SECTION E — SCOPE DISCIPLINE
+    ═══════════════════════════════════════════════════════════════
+
+    Touch only what the current task requires.
+
+    NEVER:
+    - Clean up code adjacent to the task
     - Refactor orthogonal systems as a side effect
     - Add features not in the spec because they "seem useful"
     - Remove code that seems unused without explicit approval
+    - Mix refactoring with feature work in the same commit
 
-    COMPLETION CLAIM RULE:
-    Never say "done", "fixed", or "working" without running verification
-    and reading the full output.  "Should work" is not evidence.
+    Refactoring belongs in the REFACTOR phase of TDD, scoped to the
+    code you just wrote, in a separate commit.
 
-    VERIFICATION CHECKLIST (before marking any task complete):
-    - [ ] Root cause identified (for bug fixes)
-    - [ ] Failing test existed before the fix
-    - [ ] All tests pass (run them fresh, read the output)
-    - [ ] Build succeeds
-    - [ ] review-checklist items for this task are checked
+    ═══════════════════════════════════════════════════════════════
+    SECTION F — SECURITY DURING IMPLEMENTATION
+    ═══════════════════════════════════════════════════════════════
+
+    Always required (no exceptions):
+    - Validate and sanitise all external input at system boundaries.
+    - Use parameterised queries / ORM — never string-interpolated SQL.
+    - Encode output to prevent XSS.
+    - Keep secrets out of code, logs, and version control.
+    - Treat LLM / AI-generated output as untrusted — same rules as
+      user input.
+
+    Before implementing any approval-required item from design.md,
+    confirm the sign-off is recorded.  Stop and request sign-off if not.
+
+    ═══════════════════════════════════════════════════════════════
+    SECTION G — AFTER EACH TASK
+    ═══════════════════════════════════════════════════════════════
+
+    1. Run the full test suite.  Read the output.  All green.
+    2. Run the build.  No type errors.  No lint violations.
+    3. Update test-plan.md: change test status from PENDING to PASS.
+    4. Mark the task checkbox complete in tasks.md.
+    5. Commit atomically:
+         <type>: <short description — WHY, not just what>
+       Types: feat | fix | refactor | test | docs | chore
+       Refactoring = separate commit from the feature.
+
+    ═══════════════════════════════════════════════════════════════
+    SECTION H — COMPLETION CLAIM RULE
+    ═══════════════════════════════════════════════════════════════
+
+    Never say "done", "fixed", "working", or "complete" without:
+    1. Running verification fresh (not from memory / cache).
+    2. Reading the full output.
+    3. Confirming the output supports the claim.
+
+    "Should work" / "probably" / "seems" = stop and verify first.
+    Evidence, not confidence.
+
+    ═══════════════════════════════════════════════════════════════
+    SECTION I — BEFORE MARKING THE FINAL VERIFICATION GATE
+    ═══════════════════════════════════════════════════════════════
+
+    Run through the verification gate section in tasks.md:
+    - [ ] Full test suite passes (unit + integration + e2e) — run fresh
+    - [ ] Build clean
+    - [ ] review-checklist.md — all axes checked, zero CRITICAL open
+    - [ ] Performance baselines not regressed
+    - [ ] Secret scan: no credentials in diff
+    - [ ] Docs updated for public API or behaviour changes
+    - [ ] All test-plan.md entries in PASS state (none left PENDING)
