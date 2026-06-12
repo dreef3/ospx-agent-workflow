@@ -1,0 +1,32 @@
+schema: ospx-best-practices
+
+context: |
+  This project uses the ospx-best-practices schema, which extends the
+  OpenSpec spec-driven workflow with TDD gates, five-axis code review,
+  security threat modelling, and incremental verification.
+
+  Development practices in force:
+  - Test-driven development: NO production code without a failing test first.
+  - Five-axis code review before every merge (correctness, readability,
+    architecture, security, performance).
+  - Stop-the-line rule: failing tests or broken builds halt all feature work.
+  - Root-cause rule: no symptom fixes; diagnose before touching code.
+  - Scope discipline: surgical precision only — no unsolicited cleanup.
+  - Verification before completion: claims of "done" require evidence.
+
+rules:
+  proposal:
+    - Surface all assumptions before proceeding.
+    - Keep to 1-2 pages; focus on why, not how.
+  specs:
+    - Every requirement needs ≥1 testable scenario.
+    - Scenarios are the TDD source of truth.
+  test-plan:
+    - All tests must be PENDING (RED) before implementation starts.
+    - Map every spec scenario to a test entry.
+  design:
+    - Security threat model is always required.
+    - Approval-required items must be signed off before coding.
+  tasks:
+    - Pre-implementation gate (section 0) must be complete before section 1.
+    - Verification gate (final section) must pass before merge.
