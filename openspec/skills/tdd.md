@@ -1,5 +1,5 @@
 ---
-name: ospx-tdd
+name: openspec-tdd
 description: Run the TDD cycle — RED → GREEN → REFACTOR — for the current task
 ---
 

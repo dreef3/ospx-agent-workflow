@@ -1,5 +1,5 @@
 ---
-name: ospx-review
+name: openspec-review
 description: Five-axis code review before merge — correctness, readability, architecture, security, performance
 ---
 

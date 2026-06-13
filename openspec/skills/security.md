@@ -1,5 +1,5 @@
 ---
-name: ospx-security
+name: openspec-security
 description: STRIDE + OWASP security audit of the current change
 ---
 
