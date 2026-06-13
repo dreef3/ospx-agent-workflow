@@ -69,11 +69,33 @@ Implement tasks from an OpenSpec change.
 
 6. **Implement tasks (loop until done or blocked)**
 
-   For each pending task:
-   - Show which task is being worked on
-   - Make the code changes required
-   - Keep changes minimal and focused
-   - Mark task complete in the tasks file: `- [ ]` → `- [x]`
+   For each pending task, apply the appropriate protocol:
+
+   **For code tasks — TDD protocol (mandatory, no exceptions):**
+   ```
+   RED    → write the test; run it; confirm it fails for the right reason
+   GREEN  → write minimum code to pass it; nothing more
+   REFACTOR → clean up; all tests stay green
+   ```
+   - If a test passes immediately: the test is wrong — delete and rewrite it.
+   - Test observable behaviour, not implementation details.
+   - Negative / edge-case tests are equally mandatory as happy-path tests.
+
+   **For tasks touching security-sensitive areas** (auth, session, external input,
+   data storage, privilege, encryption, file upload, external integrations):
+   - Validate and sanitise all external input at system boundaries
+   - Parameterised queries only — never string-interpolated SQL
+   - No secrets in code or logs; encode output to prevent XSS
+   - Pause and flag if the task requires a new auth flow, sensitive data storage,
+     CORS changes, or new external integration — these require explicit approval
+     before implementation
+
+   **Stop-the-line rule:**
+   Tests fail or build breaks → STOP. Diagnose root cause. Fix → write regression
+   test → resume. Never push past a failing test.
+
+   After each task:
+   - Mark complete in the tasks file: `- [ ]` → `- [x]`
    - Continue to next task
 
    **Pause if:**
@@ -82,7 +104,22 @@ Implement tasks from an OpenSpec change.
    - Error or blocker encountered → report and wait for guidance
    - User interrupts
 
-7. **On completion or pause, show status**
+7. **Five-axis review before marking all done**
+
+   When all tasks are complete, run a review pass before declaring completion:
+
+   | Axis | Check |
+   |------|-------|
+   | Correctness | All spec scenarios satisfied? Edge cases covered? |
+   | Readability | Understandable without the author? No premature abstractions? |
+   | Architecture | Fits existing design? Module boundaries respected? |
+   | Security | Input validated? No secrets? Auth checks present? |
+   | Performance | No N+1 queries? Bounded loops? Baselines not regressed? |
+
+   Flag issues as CRITICAL (block) / IMPORTANT (fix before next task) / NIT.
+   Fix any CRITICAL or IMPORTANT findings before reporting completion.
+
+8. **On completion or pause, show status**
 
    Display:
    - Tasks completed this session

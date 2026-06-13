@@ -1,5 +1,5 @@
 ---
-name: ospx-debug
+name: openspec-debug
 description: Systematic debugging — reproduce, localise, reduce, fix root cause, guard
 ---
 

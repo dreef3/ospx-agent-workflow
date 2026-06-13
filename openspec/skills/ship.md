@@ -1,5 +1,5 @@
 ---
-name: ospx-ship
+name: openspec-ship
 description: Pre-merge and pre-deploy checklist — quality gates, git hygiene, docs, deployment readiness
 ---
 

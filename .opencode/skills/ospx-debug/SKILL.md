@@ -1,1 +1,0 @@
-../../../openspec/skills/debug.md
