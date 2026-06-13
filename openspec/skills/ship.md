@@ -1,17 +1,22 @@
-Pre-merge and pre-deploy checklist.
+---
+name: ospx-ship
+description: Pre-merge and pre-deploy checklist — quality gates, git hygiene, docs, deployment readiness
+---
 
-## Pre-Merge Gate
+# Ship
 
-Run through review-checklist.md, then verify:
+Pre-merge and pre-deploy checklist. Run through `review-checklist.md` first, then verify:
 
-### Quality Gates
-- [ ] Full test suite passes (run fresh — don't rely on cached results)
+## Quality Gates
+
+- [ ] Full test suite passes — run fresh, do not rely on cached results
 - [ ] Build succeeds with no type errors or lint violations
-- [ ] All CRITICAL and IMPORTANT items in review-checklist.md resolved
-- [ ] Performance baselines from test-plan.md not regressed
+- [ ] All CRITICAL and IMPORTANT items in `review-checklist.md` resolved
+- [ ] Performance baselines from `test-plan.md` not regressed
 - [ ] No secrets in the diff (`git diff HEAD | grep -iE 'password|secret|token|key'`)
 
-### Git Hygiene
+## Git Hygiene
+
 - [ ] Commits are atomic — each addresses one logical change
 - [ ] Commit messages explain WHY, not just what
   Format: `<type>: <short description>` (types: feat/fix/refactor/test/docs/chore)
@@ -19,14 +24,16 @@ Run through review-checklist.md, then verify:
 - [ ] No force-push to shared branches
 - [ ] `.gitignore` covers build artefacts and secrets
 
-### Documentation
+## Documentation
+
 - [ ] Public API changes documented
-- [ ] Architectural decisions documented in design.md or an ADR
+- [ ] Architectural decisions documented in `design.md` or an ADR
 - [ ] CHANGELOG updated if this is a user-facing change
 
-### Deployment Readiness
+## Deployment Readiness
+
 - [ ] Feature flags configured if needed (gradual rollout)
-- [ ] Migration plan from design.md reviewed
+- [ ] Migration plan from `design.md` reviewed
 - [ ] Rollback plan is known and documented
 - [ ] Monitoring / alerting in place for new critical paths
 - [ ] On-call knows this is shipping
@@ -36,18 +43,12 @@ Run through review-checklist.md, then verify:
 ```
 feat: add CSV data export endpoint
 
-Resolves the user request from #123.  Uses streaming to avoid loading
-large datasets into memory.  Pagination is enforced server-side;
+Resolves the user request from #123. Uses streaming to avoid loading
+large datasets into memory. Pagination is enforced server-side;
 client receives chunks of ≤1000 rows per request.
 ```
 
-Types:
-- `feat` — new capability
-- `fix` — bug fix
-- `refactor` — code change with no behaviour change
-- `test` — test additions or fixes
-- `docs` — documentation only
-- `chore` — build, tooling, dependency updates
+Types: `feat` | `fix` | `refactor` | `test` | `docs` | `chore`
 
 ## Red Flags (do not ship if any are true)
 

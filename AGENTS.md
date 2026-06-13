@@ -10,6 +10,46 @@ the `apply` phase.
 
 ---
 
+## Skill Discovery
+
+```
+Task arrives
+    │
+    ├── Exploring an idea or problem?              → openspec-explore
+    ├── Ready to create a change with artifacts?   → openspec-propose
+    ├── Implementing tasks from a change?          → openspec-apply-change
+    ├── Done implementing, ready to archive?       → openspec-archive-change
+    ├── Have a spec, need tasks / test plan?       → ospx-plan
+    ├── Implementing code?                         → ospx-tdd
+    │   ├── Something broke?                      → ospx-debug
+    │   └── Stakes high / unfamiliar?             → list assumptions, then ospx-tdd
+    ├── Code ready to merge?                       → ospx-review
+    │   ├── Too complex?                          → simplify first
+    │   └── Security concerns?                    → ospx-security
+    └── Ready to commit/merge?                     → ospx-ship
+```
+
+## Skills
+
+| Skill | When to use |
+|-------|-------------|
+| `openspec-explore` | Think through ideas, investigate problems before committing to a change |
+| `openspec-propose` | Start a new change — creates proposal, specs, design, tasks in one step |
+| `openspec-apply-change` | Work through implementation tasks in a change |
+| `openspec-archive-change` | Finalise a completed change; syncs delta specs to main |
+| `openspec-sync-specs` | Sync delta specs to main without archiving |
+| `ospx-plan` | Spec-driven planning or task breakdown (without OpenSpec CLI) |
+| `ospx-tdd` | TDD cycle: RED → GREEN → REFACTOR |
+| `ospx-review` | Five-axis code review before merge |
+| `ospx-debug` | Reproduce → localise → fix root cause → guard |
+| `ospx-security` | STRIDE + OWASP audit |
+| `ospx-ship` | Pre-merge / pre-deploy checklist |
+
+Skills live in `openspec/skills/` (canonical) and are auto-loaded from
+`.claude/skills/`, `.github/skills/`, and `.opencode/skills/`.
+
+---
+
 ## Document Lifecycle
 
 Every non-trivial change produces these documents in order:

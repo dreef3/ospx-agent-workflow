@@ -1,0 +1,1 @@
+../../../openspec/skills/ship.md

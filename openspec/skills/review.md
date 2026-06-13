@@ -1,10 +1,17 @@
-Run a five-axis code review for the current change.
+---
+name: ospx-review
+description: Five-axis code review before merge — correctness, readability, architecture, security, performance
+---
+
+# Review
+
+Five-axis code review for the current change. Run before merging any PR.
 
 ## When to use
 
 - Before merging any PR or change
 - After completing a feature implementation
-- When another agent or model produced code you need to evaluate
+- When another agent produced code you need to evaluate
 - After any bug fix (review both the fix and the regression test)
 
 ## Process
@@ -12,20 +19,20 @@ Run a five-axis code review for the current change.
 ### Step 1 — Understand context
 
 Read:
-- proposal.md (what problem is being solved)
-- specs/*.md (requirements)
-- review-checklist.md (pre-generated checklist for this change)
+- `proposal.md` (what problem is being solved)
+- `specs/*.md` (requirements and scenarios)
+- `review-checklist.md` (pre-generated checklist for this change)
 - The diff / changed files
 
 ### Step 2 — Review tests first
 
-Before reading implementation code, check:
+Before reading implementation code:
 - Do tests exist for every spec scenario?
 - Do tests test behaviour (not implementation details)?
 - Were tests written before the code (RED phase happened)?
 - Do negative / edge-case tests exist?
 
-### Step 3 — Apply the five-axis framework
+### Step 3 — Five-axis framework
 
 #### Axis 1: Correctness
 - Does the code accomplish its stated purpose per specs?
@@ -35,17 +42,17 @@ Before reading implementation code, check:
 
 #### Axis 2: Readability & Simplicity
 - Understandable without author explanation?
-- No premature abstractions?
+- No premature abstractions? (3 similar lines > 1 over-engineered helper)
 - Change size reviewable? (≤100 ideal, ≤300 acceptable, >300 must split)
-- Refactoring separate from feature work?
+- Refactoring in a separate commit from feature work?
 
 #### Axis 3: Architecture
 - Fits existing system design and patterns?
 - Module boundaries and dependency direction respected?
-- Circular dependencies introduced?
+- No circular dependencies introduced?
 
 #### Axis 4: Security
-- All external input validated and sanitised?
+- All external input validated and sanitised at system boundaries?
 - No secrets in code, logs, or version control?
 - Parameterised queries used?
 - Output encoded to prevent XSS?
@@ -56,7 +63,7 @@ Before reading implementation code, check:
 - N+1 queries introduced?
 - Unbounded loops without pagination?
 - Blocking I/O where async is needed?
-- Performance baselines from test-plan regressed?
+- Performance baselines from `test-plan.md` regressed?
 
 ### Step 4 — Categorise findings
 
@@ -69,12 +76,11 @@ Label every finding with severity:
 
 ### Step 5 — Write the review
 
-Format:
 ```
 ## Review: [change title]
 
 ### Summary
-[1-2 sentence overall assessment]
+[1–2 sentence overall assessment]
 
 ### Findings
 
@@ -94,4 +100,3 @@ NIT: [location] — [finding]
 - Never "LGTM" without reading the code.
 - Do not block a change because it isn't exactly how you would have written it.
 - Apply technical facts over opinions when resolving disputes.
-- Respond within one business day.

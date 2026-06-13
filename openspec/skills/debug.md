@@ -1,8 +1,11 @@
-Run the systematic debugging workflow.
+---
+name: ospx-debug
+description: Systematic debugging — reproduce, localise, reduce, fix root cause, guard
+---
 
-## The Law: No Fixes Without Root Cause
+# Debug
 
-Never attempt a fix before diagnosing root cause.
+Systematic debugging workflow. Never attempt a fix before diagnosing root cause.
 Symptom-focused solutions compound problems.
 
 ## Phase 1 — Reproduce
@@ -20,13 +23,6 @@ Can you reproduce the failure?
     └── Truly random? → add defensive logging, document conditions, monitor
 ```
 
-For test failures:
-```bash
-# Run the specific failing test in isolation
-npm test -- --grep "failing test name"
-npm test -- --testPathPattern="specific-file" --runInBand
-```
-
 ## Phase 2 — Localise
 
 Narrow down WHERE the failure occurs:
@@ -38,15 +34,15 @@ Which layer?
 ├── Database       → queries, schema, data integrity
 ├── Build tooling  → config, dependencies, environment
 ├── External       → connectivity, API changes, rate limits
-└── Test itself    → false negative?  Is the test wrong?
+└── Test itself    → false negative? Is the test wrong?
 ```
 
-Use git bisect for regressions:
+Use `git bisect` for regressions:
 ```bash
 git bisect start
 git bisect bad                     # current broken commit
 git bisect good <known-good-sha>   # last known good
-git bisect run npm test -- --grep "failing test"
+git bisect run <test-command>
 ```
 
 ## Phase 3 — Reduce
@@ -59,7 +55,7 @@ A minimal reproduction makes root cause obvious.
 
 ```
 Symptom: "user list shows duplicates"
-Symptom fix (BAD):  deduplicate in the UI → [...new Set(users)]
+Symptom fix (BAD):  deduplicate in UI → [...new Set(users)]
 Root cause fix (GOOD): fix the JOIN query that produces duplicates
 ```
 
@@ -68,15 +64,12 @@ Ask "why?" until you reach the actual cause, not where it manifests.
 ## Phase 5 — Guard Against Recurrence
 
 Write a test that fails without the fix and passes with it.
-This test goes into test-plan.md and the test suite permanently.
+This test goes into `test-plan.md` and the test suite permanently.
 
 ## Phase 6 — Verify End-to-End
 
-```bash
-npm test              # specific failing test
-npm test              # full suite (check for regressions)
-npm run build         # type / compilation errors
-```
+Run the specific failing test, then the full suite, then the build.
+All must pass before the bug is closed.
 
 ## Stop Rule
 

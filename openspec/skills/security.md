@@ -1,8 +1,13 @@
-Run a security audit of the current change.
+---
+name: ospx-security
+description: STRIDE + OWASP security audit of the current change
+---
 
-## Framework: Always Required, Requires Approval, Never Acceptable
+# Security
 
-### Always Required (no exceptions)
+Security audit of the current change. Three tiers: always required, requires approval, never acceptable.
+
+## Always Required (no exceptions)
 
 - [ ] All external input validated and sanitised at system boundaries
 - [ ] Parameterised queries / ORM — no string-interpolated SQL
@@ -14,7 +19,7 @@ Run a security audit of the current change.
 - [ ] Tool / function call permissions scoped to minimum necessary
 - [ ] Cross-tenant data excluded from AI prompts
 
-### Requires Explicit Approval Before Merging
+## Requires Explicit Approval Before Merging
 
 - [ ] New authentication flows or session management changes
 - [ ] New storage of sensitive / PII data
@@ -23,7 +28,7 @@ Run a security audit of the current change.
 - [ ] File upload handling changes
 - [ ] Changes to privilege escalation paths
 
-### Never Acceptable (immediate block)
+## Never Acceptable (immediate block)
 
 - Secrets committed to version control
 - Sensitive data in logs
@@ -38,7 +43,7 @@ Run a security audit of the current change.
 | A01 | Broken Access Control | Auth check on every endpoint; no IDOR paths |
 | A02 | Cryptographic Failures | Sensitive data encrypted at rest and in transit |
 | A03 | Injection | Parameterised queries; input sanitisation |
-| A04 | Insecure Design | Threat model in design.md |
+| A04 | Insecure Design | Threat model in `design.md` |
 | A05 | Security Misconfiguration | Secrets not in config files; debug off in prod |
 | A06 | Vulnerable Components | Dependency audit clean |
 | A07 | Auth Failures | Rate limiting; account lockout; MFA where relevant |
@@ -46,11 +51,21 @@ Run a security audit of the current change.
 | A09 | Logging Failures | Errors logged; PII not logged |
 | A10 | SSRF | URL / redirect targets validated before fetching |
 
-## Threat Modelling Checklist
+## Threat Modelling (STRIDE)
 
 1. Map trust boundaries: where does untrusted data enter?
 2. Identify valuable assets: credentials, PII, payment data, session tokens.
-3. Apply STRIDE to each boundary.
+3. Apply STRIDE to each boundary:
+
+| Threat                 | Surface | Severity | Mitigation |
+|------------------------|---------|----------|------------|
+| Spoofing               | …       | H/M/L    | …          |
+| Tampering              | …       | H/M/L    | …          |
+| Repudiation            | …       | H/M/L    | …          |
+| Information Disclosure | …       | H/M/L    | …          |
+| Denial of Service      | …       | H/M/L    | …          |
+| Elevation of Privilege | …       | H/M/L    | …          |
+
 4. For each threat: is a control in place or planned?
 5. Write abuse cases alongside use cases in specs.
 
